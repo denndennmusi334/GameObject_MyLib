@@ -1,0 +1,28 @@
+﻿#include "stdafx.h"
+#include "GameObjectManager.h"
+
+void GameObjectManager::Destroy(GameObject* obj)
+{
+	obj->Destroy();
+}
+
+void GameObjectManager::Update()
+{
+    for (auto& obj : objects)
+        obj->Update();
+
+    if (!addBuffer.empty())
+    {
+        for (auto& newObj : addBuffer)
+        {
+            objects.push_back(std::move(newObj));
+        }
+        addBuffer.clear(); // 待機部屋を空にする
+    }
+}
+
+
+void GameObjectManager::Clear()
+{
+    objects.clear(); // unique_ptr なので一括解放
+}
