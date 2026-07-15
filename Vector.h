@@ -43,8 +43,8 @@ struct Vector2D
     /// Vector2D<float> v(1.0f);
     /// → (1.0f,1.0f)
     /// </example>
-    explicit constexpr Vector2D(const T& v) noexcept
-        : x(v), y(v) {
+    explicit constexpr Vector2D(const T& vector) noexcept
+        : x(vector), y(vector) {
     }
 
     /// <summary>
@@ -57,8 +57,8 @@ struct Vector2D
     /// <example>
     /// float d = a.Dot(b);
     /// </example>
-    constexpr T Dot(const Vector2D& v) const noexcept {
-        return (v.x * x) + (v.y * y);
+    constexpr T Dot(const Vector2D& vector) const noexcept {
+        return (vector.x * x) + (vector.y * y);
     }
 
     /// <summary>
@@ -71,8 +71,8 @@ struct Vector2D
     /// 0より小さい → 右側
     /// 0 → 同一直線
     /// </returns>
-    constexpr T Cross(const Vector2D& v) const noexcept {
-        return x * v.y - y * v.x;
+    constexpr T Cross(const Vector2D& vector) const noexcept {
+        return x * vector.y - y * vector.x;
     }
 
     /// <summary>
@@ -109,8 +109,8 @@ struct Vector2D
     /// <returns>
     /// 距離
     /// </returns>
-    double Distance(const Vector2D& v) const noexcept {
-        return (*this - v).Length();
+    double Distance(const Vector2D& vector) const noexcept {
+        return (*this - vector).Length();
     }
 
     /// <summary>
@@ -239,8 +239,8 @@ struct Vector2D
     /// true : 左側
     /// false : 左側ではない
     /// </returns>
-    constexpr bool IsLeftOf(const Vector2D& v) const noexcept {
-        return Cross(v) > 0;
+    constexpr bool IsLeftOf(const Vector2D& vector) const noexcept {
+        return Cross(vector) > 0;
     }
 
     /// <summary>
@@ -251,8 +251,8 @@ struct Vector2D
     /// true : 右側
     /// false : 右側ではない
     /// </returns>
-    constexpr bool IsRightOf(const Vector2D& v) const noexcept {
-        return Cross(v) < 0;
+    constexpr bool IsRightOf(const Vector2D& vector) const noexcept {
+        return Cross(vector) < 0;
     }
 
     /// <summary>
@@ -318,14 +318,30 @@ struct Vector2D
 
         return CrossLine(A, B) == 0;
     }
+    /// <summary>
+    /// 指定した角度回転させる.
+    /// </summary>
+    /// <param name="rad">回転させる角度(ラジアン)</param>
+    /// <returns>回転したvector</returns>
+    Vector2D Rotate(float rad)
+        const noexcept {
+        float c = cosf(rad);
+        float s = sinf(rad);
+
+        return
+        {
+            x * c - y * s,
+            x * s + y * c
+        };
+    }
 };
 
 #pragma region Vec2 計算用.
 
 // unary -
 template<typename T>
-constexpr Vector2D<T> operator-(const Vector2D<T>& v) noexcept {
-    return Vector2D<T>{ -v.x, -v.y };
+constexpr Vector2D<T> operator-(const Vector2D<T>& vector) noexcept {
+    return Vector2D<T>{ -vector.x, -vector.y };
 }
 
 // vector <op> vector

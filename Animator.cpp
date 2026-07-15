@@ -84,22 +84,43 @@ void Animator::Draw(Vec2f pos, float scale, float angle, BOOL trans_flag)
             using S = std::decay_t<decltype(s)>;
 
             if constexpr (std::is_same_v<S, AnimCircle>) {
+
+                Vec2f offset = s.offset.Rotate(MyStd::DegToRad(angle));
                 // 円の描画（x, y からのオフセットを足す）
                 DrawCircle(
-                    Cast<int>(pos.x + s.offset.x),
-                    Cast<int>(pos.y + s.offset.y),
+                    Cast<int>(pos.x + offset.x),
+                    Cast<int>(pos.y + offset.y),
                     Cast<int>(s.radius),
                     s.color, s.fill
                 );
             }
             else if constexpr (std::is_same_v<S, AnimRect>) {
+
+                //それぞれの頂点の座標を計算.
+                Vec2f halfSize = { s.width / 2.0f, s.height / 2.0f };
+
+                Vec2f boxPos[4] =
+                {
+                    { -halfSize.x, -halfSize.y },
+                    {  halfSize.x, -halfSize.y },
+                    {  halfSize.x,  halfSize.y },
+                    { -halfSize.x,  halfSize.y }
+                };                
+
+                for (int i = 0; i < 4; i++)
+                {
+                    boxPos[i] += s.offset;
+					boxPos[i] = boxPos[i].Rotate(MyStd::DegToRad(angle)) + pos;
+                }
+
                 // 矩形の描画
-                DrawBox(
-                    Cast<int>(pos.x + s.offset.x),
-                    Cast<int>(pos.y + s.offset.y),
-                    Cast<int>(pos.x + s.offset.y + s.width),
-                    Cast<int>(pos.y + s.offset.x + s.height),
-                    s.color, s.fill
+                DrawQuadrangle(
+                    Cast<int>(boxPos[0].x), Cast<int>(boxPos[0].y),
+                    Cast<int>(boxPos[1].x), Cast<int>(boxPos[1].y),
+                    Cast<int>(boxPos[2].x), Cast<int>(boxPos[2].y),
+                    Cast<int>(boxPos[3].x), Cast<int>(boxPos[3].y),
+                    s.color,
+                    s.fill
                 );
             }
             }, shape);

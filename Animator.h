@@ -26,13 +26,13 @@ struct Frame {
 class Animation
 {
 private:
-    std::vector<Frame> frames; // DxLib グラフィックハンドル
-    int frameTimeMs;         // 1フレームの表示時間（ms）
+    std::vector<Frame> frames; // DxLib グラフィックハンドル.
+    int frameTimeMs;         // 1フレームの表示時間(ms)
 
 public:
     Animation()
         : frameTimeMs(100){}
-    // 必須情報をコンストラクタで強制
+    // 必須情報をコンストラクタで強制.
     Animation(const std::vector<Frame>& frames, int frameTimeMs)
         : frames(frames), frameTimeMs(frameTimeMs){}
 
@@ -41,7 +41,8 @@ public:
         this->frames = frames;
         frameTimeMs = frame_time_ms;
     }
-    // 読み取り専用アクセサ
+
+    // 読み取り専用関数.
     const std::vector<Frame>& GetFrames() const { return frames; }
     int GetFrameTime() const { return frameTimeMs; }
     int GetFrameCount() const { return (int)frames.size(); }

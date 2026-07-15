@@ -4,8 +4,11 @@ class Player :
     public GameObject
 {
 private:
+	Animation playerAnimation;
 public:
 	Player() = default;;
+
+	void CreateAnimation() override ;
 
 	void Initialize() override;
 	void Finalize() override;

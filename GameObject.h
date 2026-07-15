@@ -10,6 +10,7 @@ private:
     std::unique_ptr<Rigidbody> rigidbody;
 protected:
     Vector2D<float> pos = { 0,0 };
+	float angle = 0.0f;
 public:
     
     Vector2D<float> GetPosition() const { return pos; }
