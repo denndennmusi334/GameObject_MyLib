@@ -20,25 +20,35 @@ void ColliderManager::CheckAllCollisions()
             CollisionInfo info =
                 CheckPair(a, b);
 
+            CollisionInfo infoA = info;
+			infoA.self = a;
+			infoA.other = b;
+
+            CollisionInfo infoB = info;
+			infoB.self = b;
+			infoB.other = a;
+
+			infoB.normal = -info.normal;
+
             if (info.hit)
             {
                 CollisionPair pair(a, b);
-                currentPairs.insert(pair);
+				currentPairs[pair] = info;
 				// 前回は衝突していなかったペアに対して OnCollisionEnter を呼び出す
                 if (previousPairs.count(pair) == 0)
                 {
 					if (a->GetOwner())
-						a->GetOwner()->OnCollisionEnter(b);
+						a->GetOwner()->OnCollisionEnter(infoA);
 					if (b->GetOwner())
-						b->GetOwner()->OnCollisionEnter(a);
+						b->GetOwner()->OnCollisionEnter(infoB);
                 }
 				// 前回も衝突していたペアに対して OnCollisionStay を呼び出す
                 else
                 {
 					if (a->GetOwner())
-						a->GetOwner()->OnCollisionStay(b);
+						a->GetOwner()->OnCollisionStay(infoA);
 					if (b->GetOwner())
-						b->GetOwner()->OnCollisionStay(a);
+						b->GetOwner()->OnCollisionStay(infoB);
                 }
 
                 if (!a->IsTrigger() && !b->IsTrigger())
@@ -50,22 +60,29 @@ void ColliderManager::CheckAllCollisions()
     }
 
 	// 前回は衝突していたが今回は衝突していないペアに対して OnCollisionExit を呼び出す
-    for (const auto& pair : previousPairs)
+    for (const auto& [pair, info] : previousPairs)
     {
-        if (currentPairs.count(pair) == 0)
+        if (currentPairs.find(pair) == currentPairs.end())
         {
+            CollisionInfo infoA = info;
+
+            CollisionInfo infoB = info;
+            infoB.self = info.other;
+            infoB.other = info.self;
+            infoB.normal = -info.normal;
+
             if (pair.a->GetOwner())
-                pair.a->GetOwner()->OnCollisionExit(pair.b);
+                pair.a->GetOwner()->OnCollisionExit(infoA);
 
             if (pair.b->GetOwner())
-                pair.b->GetOwner()->OnCollisionExit(pair.a);
+                pair.b->GetOwner()->OnCollisionExit(infoB);
         }
     }
 	//ペアを更新
 	previousPairs = currentPairs;
 }
 
-void ColliderManager::ResolveCollision(BaseCollider* a, BaseCollider* b, CollisionInfo& info)
+void ColliderManager::ResolveCollision(BaseCollider* a, BaseCollider* b, const CollisionInfo& info)
 {
 	//const TCHAR* aText = 0;
 	//const TCHAR* bText = 0;
@@ -137,17 +154,21 @@ void ColliderManager::ResolveCollision(BaseCollider* a, BaseCollider* b, Collisi
 CollisionInfo ColliderManager::CheckPair(BaseCollider* a, BaseCollider* b)
 {
 
+	CollisionInfo info;
+
     switch (a->GetColliderType())
     {
     case ColliderType::CIRCLE:
         switch (b->GetColliderType())
         {
         case ColliderType::CIRCLE:
-            return CircleVsCircle(static_cast<CircleCollider*>(a),
+            info = CircleVsCircle(static_cast<CircleCollider*>(a),
                 static_cast<CircleCollider*>(b));
+            break;
         case ColliderType::BOX:
-            return CircleVsBox(static_cast<CircleCollider*>(a),
+            info = CircleVsBox(static_cast<CircleCollider*>(a),
                 static_cast<BoxCollider*>(b));
+            break;
         default:
             break;
         }
@@ -157,11 +178,13 @@ CollisionInfo ColliderManager::CheckPair(BaseCollider* a, BaseCollider* b)
         switch (b->GetColliderType())
         {
         case ColliderType::CIRCLE:
-            return BoxVsCircle(static_cast<BoxCollider*>(a), 
+            info = BoxVsCircle(static_cast<BoxCollider*>(a),
                 static_cast<CircleCollider*>(b));
+            break;
         case ColliderType::BOX:
-            return BoxVsBox(static_cast<BoxCollider*>(a),
+            info = BoxVsBox(static_cast<BoxCollider*>(a),
                 static_cast<BoxCollider*>(b));
+            break;
         default:
             break;
         }
@@ -170,13 +193,20 @@ CollisionInfo ColliderManager::CheckPair(BaseCollider* a, BaseCollider* b)
         break;
     }
 
-    return {};
+	if (info.hit)
+    {
+        info.self = a;
+        info.other = b;
+    }
+
+    return info;
 }
 
 CollisionInfo ColliderManager::CircleVsCircle(
      CircleCollider* a,
      CircleCollider* b)
 {
+	//diffはbの中心からaの中心へのベクトル
     Vector2D<float> diff =
         a->GetWorldPosition() - b->GetWorldPosition();
 
@@ -188,7 +218,7 @@ CollisionInfo ColliderManager::CircleVsCircle(
 		if (dist == 0)
 		{
 			info.normal = { 0, -1 };
-			info.penetration = a->GetRadius();
+			info.penetration = r;
 		}
 		else
 		{
@@ -324,6 +354,53 @@ CollisionInfo ColliderManager::CircleVsBox(
         return {};
     }
 
+}
+
+void ColliderManager::RemoveCollider(BaseCollider* collider)
+{
+    if (!collider) return;
+
+    colliders.erase(
+        std::remove(colliders.begin(), colliders.end(), collider),
+        colliders.end());
+
+    auto removePairs = [collider](auto& pairs)
+        {
+            for (auto it = pairs.begin(); it != pairs.end();)
+            {
+                if (it->first.a == collider || it->first.b == collider)
+                {
+                    it = pairs.erase(it);
+                }
+                else
+                {
+                    ++it;
+                }
+            }
+        };
+
+    removePairs(currentPairs);
+    removePairs(previousPairs);
+}
+
+void ColliderManager::DestroyedColliderCheck()
+{
+    for (auto it = colliders.begin(); it != colliders.end();)
+    {
+        BaseCollider* collider = *it;
+
+        if (!collider || collider->IsDestroyed())
+        {
+            RemoveCollider(collider);
+
+            // RemoveCollider内でeraseされるので先頭からやり直す
+            it = colliders.begin();
+        }
+        else
+        {
+            ++it;
+        }
+    }
 }
 
 #if COLLIDER_DEBUG

@@ -31,9 +31,9 @@ public:
     const auto& GetCollider() const { return collider; }
 	auto* GetRigidbody() { return rigidbody.get(); }
 
-    virtual void OnCollisionEnter(BaseCollider* other)  {};
-    virtual void OnCollisionStay(BaseCollider* other)   {};
-    virtual void OnCollisionExit(BaseCollider* other)   {};
+    virtual void OnCollisionEnter(const CollisionInfo& info) {};
+    virtual void OnCollisionStay(const CollisionInfo& info)  {};
+    virtual void OnCollisionExit(const CollisionInfo& info)  {};
 
 	void CreateAnimation() override {};
 

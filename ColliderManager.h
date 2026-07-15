@@ -42,8 +42,8 @@ private:
     std::vector<BaseCollider*> colliders;
     ColliderManager() = default;
 
-    std::unordered_set<CollisionPair, CollisionPairHash> currentPairs;
-    std::unordered_set<CollisionPair, CollisionPairHash> previousPairs;
+    std::unordered_map<CollisionPair, CollisionInfo, CollisionPairHash> currentPairs;
+    std::unordered_map<CollisionPair, CollisionInfo, CollisionPairHash> previousPairs;
 
     CollisionInfo CheckPair(BaseCollider* a, BaseCollider* b);
     CollisionInfo CircleVsCircle(CircleCollider* a, CircleCollider* b);
@@ -51,8 +51,9 @@ private:
     CollisionInfo CircleVsBox(CircleCollider* c, BoxCollider* b);
     CollisionInfo BoxVsCircle(BoxCollider* b, CircleCollider* c);
 
-    void ResolveCollision(BaseCollider* a, BaseCollider* b, CollisionInfo& info);
+    void ResolveCollision(BaseCollider* a, BaseCollider* b, const CollisionInfo& info);
 
+    void RemoveCollider(BaseCollider* collider);
 public:
     static ColliderManager& GetInstance()
     {
@@ -75,13 +76,7 @@ public:
     }
 
 	// 登録解除関数 SceneのKIllで必ず毎フレーム呼ぶ.
-	void DestroyedColliderCheck()
-	{
-		colliders.erase(std::remove_if(colliders.begin(), colliders.end(),
-			[](BaseCollider* col) { return !col || col->IsDestroyed(); }),
-			colliders.end());
-	}
-
+    void DestroyedColliderCheck();
     // 衝突判定
     void CheckAllCollisions();
 #if COLLIDER_DEBUG

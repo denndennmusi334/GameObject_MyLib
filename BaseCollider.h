@@ -60,5 +60,8 @@ struct CollisionInfo
     Vector2D<float> normal = { 0,0 };
 
     float penetration = 0.0f;
+
+    BaseCollider* self = nullptr;
+    BaseCollider* other = nullptr;
 };
 
